@@ -13,7 +13,7 @@ class Tensor:
     
     def __init__(
         self,
-        data: Union[int, float, list, np.nparray],
+        data: Union[int, float, list, np.ndarray],
         _children: Tuple[Tensor, ...] = (),
         _op: str = '',
         requires_grad: bool = False
@@ -66,7 +66,7 @@ class Tensor:
         def build_topo(v: Tensor):
             if v not in visited:
                 visited.add(v)
-                for child in v.prev:
+                for child in v._prev:
                     build_topo(child)
                 topo.append(v)
                 
@@ -86,7 +86,10 @@ class Tensor:
         def _backward():
             if self.requires_grad:
                 g = self._unbroadcast(out.grad, self.data.shape)
-                self.grad = g if self.grad is None else other.grad + g
+                self.grad = g if self.grad is None else self.grad + g
+            if other.requires_grad:
+                g = other._unbroadcast(out.grad, other.data.shape)
+                other.grad = g if other.grad is None else other.grad + g
                 
         out._backward = _backward
         return out
@@ -130,7 +133,7 @@ class Tensor:
                 g = self.data.T @ out.grad
                 other.grad = g if other.grad is None else other.grad + g
                 
-        out.__backward = _backward
+        out._backward = _backward
         return out
     
     def sum(self, axis: Optional[int] = None, keepdims: bool = False) -> Tensor:
@@ -140,7 +143,7 @@ class Tensor:
             if self.requires_grad:
                 grad_expanded = out.grad
                 if not keepdims and axis is not None:
-                    grad_expanded = np.expanded_dims(grad_expanded, axis = axis)
+                    grad_expanded = np.expand_dims(grad_expanded, axis = axis)
                 g = np.broadcast_to(grad_expanded, self.data.shape)
                 self.grad = g if self.grad is None else self.grad + g
                 
@@ -159,7 +162,7 @@ class Tensor:
         return out
     
     def exp(self) -> Tensor:
-        out = Tensor(np.exp(self.data), 'exp', requires_grad = self.requires_grad)
+        out = Tensor(np.exp(self.data), (self,), 'exp', requires_grad = self.requires_grad)
         
         def _backward():
             if self.requires_grad:

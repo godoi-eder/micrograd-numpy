@@ -13,6 +13,6 @@ __all__ = [
     'Module',
     'mse_loss',
     'cross_entropy_loss',
-    'SDG',
+    'SGD',
     'Adam'
 ]

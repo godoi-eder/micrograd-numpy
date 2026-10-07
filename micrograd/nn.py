@@ -31,7 +31,7 @@ class Linear(Module):
     
 class Sequential(Module):
     def __init__(self, * layers: Module):
-        self.layer = list(layers)
+        self.layers = list(layers)
         
     def forward(self, x: Tensor) -> Tensor:
         for layer in self.layers:
